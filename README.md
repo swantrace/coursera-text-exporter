@@ -23,7 +23,7 @@ https://www.coursera.org/learn/packt-scalable-node-js-advanced-patterns-integrat
 ## 当前验证范围
 
 - 真实匿名请求已验证指定课程的大纲与视频元数据结构。匿名大纲有 3 个模块和 52 个课时引用，但只提供第一节预览课的详情；因此完整采集需要登录及课程访问权限。
-- `tests/fixtures/preview-*.json` 来源于上述公开响应；视频 fixture 已移除媒体链接和签名参数。
+- `tests/fixtures/preview-*.json` 来源于上述公开响应；视频 fixture 的媒体链接已替换为无签名测试 URL，保留实际分辨率和字段结构。
 - 混合课程自动化测试使用合成响应，包含视频、阅读、锁定与不支持课时。
 - 完整登录课程采集、真实 Google 授权/上传仍需使用用户浏览器与 Google Cloud 配置验证。未将模拟测试视为这两项验收通过。
 
@@ -53,7 +53,7 @@ OAuth 官方指南：https://developer.chrome.com/docs/extensions/how-to/integra
 
 ## CDN 域名权限
 
-默认只允许 `www.coursera.org` 和 `www.googleapis.com`。字幕代理通常是 Coursera 相对路径。若资源指向其他域名，界面会报告 `HOST_PERMISSION` 和所需 origin。将实际资源 HTTPS origin 加入 `config.local.json` 的 `assetOrigins` 数组，然后重新构建、刷新、重试。例如输入形如 `https://具体资源域名`，不填写路径、通配符或签名参数。
+默认允许 `www.coursera.org`、`www.googleapis.com` 和已验证的 Coursera 视频 CDN `d3c33hcgiwev3.cloudfront.net`。字幕代理通常是 Coursera 相对路径。若资源指向其他域名，界面会报告 `HOST_PERMISSION` 和所需 origin。将实际资源 HTTPS origin 加入 `config.local.json` 的 `assetOrigins` 数组，然后重新构建、刷新、重试。例如输入形如 `https://具体资源域名`，不填写路径、通配符或签名参数。
 
 不会默认请求所有网站权限。远程资源不能请求任意 URL；Google 授权头只允许发送至 `www.googleapis.com`。
 
@@ -108,3 +108,44 @@ npm run smoke
 **GOOGLE_CONFIG**：尚未填写 OAuth Client ID。无需修改此配置也能本地导出。
 
 **GOOGLE_AUTH**：点击「连接 Google Drive」后再点击同步或重试失败。
+
+## 可选视频下载（v0.2）
+
+在开始采集前勾选 **「同时下载视频及同名字幕」**：
+
+- 最高分辨率：1080p / 720p / **360p（默认）** / 240p。
+- 格式：WebM / **MP4（默认）**。
+- 仅选择所选格式、不超过上限的最高可用分辨率。实际分辨率低于上限时会记录提示；没有符合条件的直链会明确报错，不擅自切换格式或升高分辨率。
+- 从 `onDemandLectureVideos.v1` 的 `linked.onDemandVideos.v1[].sources.byResolution` 读取 `mp4VideoUrl` / `webMVideoUrl`，不下载播放列表、不合并流、不转码。
+- 视频由 Chrome 下载管理器直接写入磁盘，不经过 Worker 内存、IndexedDB 或 ZIP 打包。字幕同步保存为同名 SRT / VTT，原有文本导出继续可用。
+
+例如：
+
+```text
+Downloads/
+└── course-slug-任务ID前8位/
+    └── modules/01-模块/01-课节/
+        ├── 01-Overview-04z9N.mp4
+        ├── 01-Overview-04z9N.en.srt
+        └── 01-Overview-04z9N.en.vtt
+```
+
+视频与字幕共享「课程顺序 + 课时标题 + itemId」文件名主体；多个语言添加语言后缀，同语言多个轨道再添加轨道编号。ZIP 内的字幕使用同样的相对路径与主体文件名，可解压到该课程文件夹。视频文件自身不包含在 ZIP 中，也不上传至 Drive；Drive 仍同步 Markdown 全文。
+
+每次采集有独立目录，重试同一任务使用相同目标文件名，避免重复生成 `(1)`、`(2)`。视频没有字幕时仍可下载；视频失败也不会丢失已采集字幕。下载结果、实际分辨率及相对路径记录在导出报告中。
+
+最多同时下载 2 个视频，字幕文件另有 2 个下载槽位。关闭 Popup 或 Worker 暂停运行时，Chrome 仍可下载；恢复时通过持久化下载 ID / 文件路径核对状态。只有 Chrome 报告文件下载完成，视频任务才计为成功。
+
+扩展的暂停、继续、取消会同步控制正在下载的文件。网络/签名错误可自动重新解析最新链接重试；重新建立下载可能从头传输。用户在 Chrome 下载管理器中主动取消的文件不会自动重启，可通过「重试失败」重新启动。重新加载扩展或更改设置不会给历史任务自动补视频；需要使用所需选项开始新任务。
+
+默认资源权限增加了已验证的 Coursera CDN：`https://d3c33hcgiwev3.cloudfront.net`。其他 CDN 仍需按上文配置 `assetOrigins`。
+
+新增测试：
+
+```bash
+npm run smoke:video
+# 可选：实际下载指定课程的公开预览视频及字幕，不需要登录
+npm run smoke:video:live
+```
+
+`smoke:video` 使用合成 API 响应和本地测试视频字节，但通过真正的 Chrome 下载管理器落盘，并核对视频/SRT/VTT 文件名与内容。`smoke:video:live` 使用该课程第一节公开预览的真实视频元数据、字幕与 CDN 文件，采集范围仅为这一节，测试文件保存在隔离临时目录并在结束后清理；不代表整门付费课程已通过登录态验证。
