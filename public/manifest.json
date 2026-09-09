@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Coursera Text Exporter",
+  "description": "通过课程 API 采集字幕与阅读材料，支持断点恢复、本地导出及 Google Drive 同步。",
+  "version": "0.1.0",
+  "minimum_chrome_version": "120",
+  "permissions": ["identity", "storage", "alarms", "downloads", "offscreen"],
+  "host_permissions": ["https://www.coursera.org/*", "https://www.googleapis.com/*"],
+  "background": { "service_worker": "background/service-worker.js", "type": "module" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "Coursera Text Exporter" },
+  "content_scripts": [{ "matches": ["https://www.coursera.org/*"], "js": ["content/course-context.js"], "run_at": "document_idle" }],
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }
+}

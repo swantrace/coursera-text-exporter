@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+.local/
+config.local.json
+playwright-report/
+test-results/
