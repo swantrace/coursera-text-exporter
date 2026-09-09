@@ -83,10 +83,12 @@ export async function execute(
     };
   }
   if (task.kind === "subtitle") {
+    if (!task.assetKey)
+      throw new AppError("TASK_INVALID", "字幕任务缺少资源标识。");
     const { raw, track } = await subtitle(
       courseId,
       item.id,
-      task.assetKey!,
+      task.assetKey,
       signal,
     );
     const { cues, warnings } = parseVtt(raw);
@@ -142,7 +144,7 @@ export async function execute(
   for (const asset of resolved.assets) {
     let raw: string;
     try {
-      raw = asset.content ?? (await requestText(asset.url!, signal));
+      raw = await readingContent(asset, signal);
     } catch (e) {
       if (!(e instanceof AppError) || e.code !== "FORBIDDEN") throw e;
       const refreshed = readingAssets(
@@ -150,7 +152,7 @@ export async function execute(
       ).assets.find((a) => a.key === asset.key);
       if (!refreshed)
         throw new AppError("ASSET_MISSING", "刷新后阅读资源已消失。");
-      raw = refreshed.content ?? (await requestText(refreshed.url!, signal));
+      raw = await readingContent(refreshed, signal);
     }
     artifacts.push({
       id: `${task.id}:${asset.key}`,
@@ -184,4 +186,14 @@ export async function execute(
     });
   }
   return { artifacts };
+}
+
+async function readingContent(
+  asset: { content?: string; url?: string },
+  signal: AbortSignal,
+): Promise<string> {
+  if (asset.content !== undefined) return asset.content;
+  if (!asset.url)
+    throw new AppError("ASSET_MISSING", "阅读资源缺少文本和下载地址。");
+  return requestText(asset.url, signal);
 }

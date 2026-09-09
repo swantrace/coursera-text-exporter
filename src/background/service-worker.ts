@@ -1,3 +1,4 @@
+import { object } from "../parsers/course";
 import { slugFromInput } from "../shared/errors";
 import type { ExportFormat, Options } from "../shared/types";
 import { videoOptions } from "../shared/video";
@@ -50,7 +51,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   );
   return true;
 });
-async function route(message: any): Promise<unknown> {
+async function route(raw: unknown): Promise<unknown> {
+  const message = object(raw);
   const jobId = typeof message.jobId === "string" ? message.jobId : undefined;
   switch (message.type) {
     case "STATE":
@@ -60,8 +62,11 @@ async function route(message: any): Promise<unknown> {
       };
     case "START": {
       const slug = slugFromInput(String(message.course ?? ""));
-      const input = message.options ?? {};
-      if (!/^[a-zA-Z0-9-]{1,35}$/.test(input.language ?? ""))
+      const input = object(message.options);
+      if (
+        typeof input.language !== "string" ||
+        !/^[a-zA-Z0-9-]{1,35}$/.test(input.language)
+      )
         throw new Error("语言代码无效。");
       const options: Options = {
         language: input.language,
@@ -85,20 +90,28 @@ async function route(message: any): Promise<unknown> {
       return { jobId: id };
     }
     case "CONTROL": {
+      const action = message.action;
       if (
         !jobId ||
-        !["pause", "resume", "cancel", "retry"].includes(message.action)
+        (action !== "pause" &&
+          action !== "resume" &&
+          action !== "cancel" &&
+          action !== "retry")
       )
         throw new Error("无效的任务操作。");
-      await control(jobId, message.action);
+      await control(jobId, action);
       abortJob(jobId);
-      await controlDownloads(jobId, message.action);
+      await controlDownloads(jobId, action);
       await publish();
       wake();
       return {};
     }
     case "EXPORT": {
-      if (!jobId || !["md", "txt", "json", "zip"].includes(message.format))
+      if (
+        !jobId ||
+        typeof message.format !== "string" ||
+        !["md", "txt", "json", "zip"].includes(message.format)
+      )
         throw new Error("无效导出格式。");
       await download(jobId, message.format as ExportFormat);
       return {};

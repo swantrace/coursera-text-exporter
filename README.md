@@ -160,13 +160,14 @@ npm run smoke:video:live
 npm run check:write -- --no-errors-on-unmatched <暂存文件列表>
 ```
 
-该命令运行项目本地的 Biome，执行格式化、导入整理及现有 `--unsafe` 自动修复。修复结果自动加入本次暂存内容；部分暂存文件的未暂存改动会先隐藏、检查后恢复。出现无法自动修复的错误时，提交失败，lint-staged 恢复检查前状态。不要用 `git add .` 自动混入无关修改。
+该命令运行项目本地的 Biome，执行格式化、导入整理及现有 `--unsafe` 自动修复。修复结果自动加入本次暂存内容；部分暂存文件的未暂存改动会先隐藏、检查后恢复。出现无法自动修复的错误或警告时，提交失败，lint-staged 恢复检查前状态。不要用 `git add .` 自动混入无关修改。
 
-Biome 遵循 `.gitignore`，不处理 `dist`、`node_modules`、`.local` 等生成或本地目录；不支持的文件类型跳过。规则告警沿用 Biome 的默认级别，错误会阻止提交。
+Biome 遵循 `.gitignore`，不处理 `dist`、`node_modules`、`.local` 等生成或本地目录；不支持的文件类型跳过。通过 `--error-on-warnings` 将警告也视为检查失败，错误与警告都会阻止提交。
 
 ```bash
+npm run check:biome   # 只读检查整个项目，错误和警告均阻断
 npm run check:write   # 手动检查并修复整个项目
 npm run test:hooks    # 在隔离临时 Git 仓库验证真实提交成功、失败阻断、部分暂存保护
 ```
 
-提交钩子检查的是本次暂存文件；完整类型检查、测试与构建仍使用 `npm run check`。
+提交钩子检查的是本次暂存文件；全项目 Biome 检查、类型检查、测试与构建使用 `npm run check`。

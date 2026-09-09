@@ -147,6 +147,7 @@ export function readingAssets(input: unknown): {
       asset.cml ??
       definition.cml ??
       (/cml/i.test(type) ? (definition.value ?? asset.value) : undefined);
+    const cmlText = typeof cml === "string" ? cml : object(cml).value;
     const url = asset.url ?? definition.url ?? asset.downloadUrl;
     if (typeof html === "string")
       result.push({ key, format: "html", content: html });
@@ -164,9 +165,8 @@ export function readingAssets(input: unknown): {
             : "txt",
         content,
       });
-    else if (typeof cml === "string" || object(cml).value) {
-      const value = typeof cml === "string" ? cml : object(cml).value;
-      result.push({ key, format: "html", content: cmlToHtml(value) });
+    else if (typeof cmlText === "string") {
+      result.push({ key, format: "html", content: cmlToHtml(cmlText) });
     } else if (typeof url === "string" && /html|markdown|text/i.test(type))
       result.push({
         key,

@@ -68,51 +68,54 @@ export async function bundle(
   ];
   const text: string[] = [title, ""];
   const orderedArtifacts = [];
-  for (const [_mi, module] of (job.course?.modules ?? []).entries()) {
-    markdown.push(`## ${heading(module.title)}`);
-    text.push(module.title);
-    for (const [_li, lesson] of module.lessons.entries()) {
-      markdown.push(`### ${heading(lesson.title)}`);
-      text.push(lesson.title);
-      for (const [_ii, item] of lesson.items.entries()) {
-        markdown.push(`#### ${heading(item.title)}`);
-        text.push(item.title);
-        const found = artifacts
-          .filter((a) => a.itemId === item.id)
-          .sort((a, b) => a.id.localeCompare(b.id));
-        orderedArtifacts.push(...found);
-        for (const [ai, artifact] of found.entries()) {
-          const language = artifact.language ? ` (${artifact.language})` : "";
-          markdown.push(
-            `[来源](${artifact.source})${language}`,
-            "",
-            artifact.markdown,
-            "",
-          );
-          text.push(language, artifact.text, "");
-          const path =
-            itemPath(job.course!, item.id) +
-            (artifact.cues
-              ? subtitleSuffix(artifact.language ?? "und", artifact.trackKey)
-              : `-${ai + 1}`);
-          files[`${path}.txt`] = strToU8(artifact.text);
-          if (artifact.cues) {
-            files[`${path}.vtt`] = strToU8(artifact.raw);
-            files[`${path}.srt`] = strToU8(toSrt(artifact.cues));
-          } else {
-            files[`${path}.md`] = strToU8(artifact.markdown);
-            files[`${path}.source.${artifact.rawFormat}`] = strToU8(
-              artifact.raw,
+  const course = job.course;
+  if (course) {
+    for (const module of course.modules) {
+      markdown.push(`## ${heading(module.title)}`);
+      text.push(module.title);
+      for (const [_li, lesson] of module.lessons.entries()) {
+        markdown.push(`### ${heading(lesson.title)}`);
+        text.push(lesson.title);
+        for (const [_ii, item] of lesson.items.entries()) {
+          markdown.push(`#### ${heading(item.title)}`);
+          text.push(item.title);
+          const found = artifacts
+            .filter((a) => a.itemId === item.id)
+            .sort((a, b) => a.id.localeCompare(b.id));
+          orderedArtifacts.push(...found);
+          for (const [ai, artifact] of found.entries()) {
+            const language = artifact.language ? ` (${artifact.language})` : "";
+            markdown.push(
+              `[来源](${artifact.source})${language}`,
+              "",
+              artifact.markdown,
+              "",
             );
+            text.push(language, artifact.text, "");
+            const path =
+              itemPath(course, item.id) +
+              (artifact.cues
+                ? subtitleSuffix(artifact.language ?? "und", artifact.trackKey)
+                : `-${ai + 1}`);
+            files[`${path}.txt`] = strToU8(artifact.text);
+            if (artifact.cues) {
+              files[`${path}.vtt`] = strToU8(artifact.raw);
+              files[`${path}.srt`] = strToU8(toSrt(artifact.cues));
+            } else {
+              files[`${path}.md`] = strToU8(artifact.markdown);
+              files[`${path}.source.${artifact.rawFormat}`] = strToU8(
+                artifact.raw,
+              );
+            }
           }
-        }
-        const issues = tasks.filter(
-          (t) => t.item?.id === item.id && !["succeeded"].includes(t.state),
-        );
-        for (const issue of issues) {
-          const note = `[${issue.state}] ${issue.error ?? "尚未完成"}${issue.language ? ` (${issue.language})` : ""}`;
-          markdown.push(`> ${heading(note)}`, "");
-          text.push(note);
+          const issues = tasks.filter(
+            (t) => t.item?.id === item.id && !["succeeded"].includes(t.state),
+          );
+          for (const issue of issues) {
+            const note = `[${issue.state}] ${issue.error ?? "尚未完成"}${issue.language ? ` (${issue.language})` : ""}`;
+            markdown.push(`> ${heading(note)}`, "");
+            text.push(note);
+          }
         }
       }
     }

@@ -5,11 +5,14 @@ const el = <T extends HTMLElement = HTMLElement>(id: string) =>
 let jobId = "",
   busy = false,
   refreshSequence = 0;
-async function send(
+async function send<T = unknown>(
   type: string,
   values: Record<string, unknown> = {},
-): Promise<any> {
-  const result = await chrome.runtime.sendMessage({
+): Promise<T> {
+  const result:
+    | { ok: true; data: T }
+    | { ok: false; error: string }
+    | undefined = await chrome.runtime.sendMessage({
     target: "worker",
     type,
     ...values,
@@ -44,7 +47,9 @@ const states: Record<string, string> = {
 };
 async function refresh(): Promise<void> {
   const sequence = ++refreshSequence;
-  const state: Snapshot = await send("STATE", { jobId: jobId || undefined });
+  const state: Snapshot = await send<Snapshot>("STATE", {
+    jobId: jobId || undefined,
+  });
   if (sequence !== refreshSequence) return;
   jobId = state.job?.id ?? "";
   const select = el<HTMLSelectElement>("jobs");
@@ -125,7 +130,7 @@ el("videos").addEventListener("change", () => {
 el("start-form").addEventListener("submit", (event) => {
   event.preventDefault();
   void action(async () => {
-    const result = await send("START", {
+    const result = await send<{ jobId: string }>("START", {
       course: el<HTMLInputElement>("course").value,
       options: {
         language: el<HTMLSelectElement>("language").value,

@@ -82,6 +82,15 @@ try {
   assert.equal(git("show", ":fixture.ts"), staged);
   assert.equal(await readFile(fixture, "utf8"), working);
 
+  // Warning-only diagnostics must also block commits.
+  await writeFile(fixture, "export const unsafe: any = 1;\n");
+  git("add", "fixture.ts");
+  const warning = run("git", ["commit", "-m", "reject warning"], false);
+  assert.notEqual(warning.status, 0);
+  assert.match(warning.stdout + warning.stderr, /noExplicitAny/);
+  assert.equal(git("rev-parse", "HEAD"), before);
+  assert.equal(git("show", ":fixture.ts"), "export const unsafe: any = 1;");
+
   // Auto-format staged code while preserving a separate unstaged edit.
   const partial =
     "export const answer=3\n// context one\n// context two\n// context three\n// context four\n";
@@ -95,7 +104,7 @@ try {
   assert.match(await readFile(fixture, "utf8"), /unstaged-only/);
   assert.equal(git("stash", "list"), "");
   console.log(
-    "PASS: hook installation, staged auto-fix, failed commit rejection, partial staging preservation",
+    "PASS: hook installation, staged auto-fix, error and warning rejection, partial staging preservation",
   );
 } finally {
   await rm(directory, { recursive: true, force: true });

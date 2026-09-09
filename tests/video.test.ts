@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { required } from "./helpers";
 import "fake-indexeddb/auto";
 import { strFromU8, unzipSync } from "fflate";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -57,7 +58,24 @@ const media = {
   },
 };
 const course = parseCourse(outline, "test-course");
-let job: Job, downloads: any[], values: Record<string, unknown>, nextId: number;
+type TestDownload = Pick<
+  chrome.downloads.DownloadItem,
+  | "id"
+  | "byExtensionId"
+  | "filename"
+  | "startTime"
+  | "state"
+  | "paused"
+  | "bytesReceived"
+  | "totalBytes"
+  | "mime"
+  | "url"
+  | "error"
+>;
+let job: Job,
+  downloads: TestDownload[],
+  values: Record<string, unknown>,
+  nextId: number;
 beforeEach(async () => {
   const database = await db();
   for (const store of ["jobs", "tasks", "artifacts", "sync"] as const)
@@ -79,7 +97,7 @@ beforeEach(async () => {
     },
   };
   await createJob(job);
-  const initial = (await claim())!;
+  const initial = required(await claim());
   await settle(initial, {});
   downloads = [];
   values = {};
@@ -89,12 +107,14 @@ beforeEach(async () => {
     storage: {
       local: {
         get: vi.fn(async (key: string) => ({ [key]: values[key] })),
-        set: vi.fn(async (update: any) => Object.assign(values, update)),
+        set: vi.fn(async (update: Record<string, unknown>) =>
+          Object.assign(values, update),
+        ),
       },
     },
     downloads: {
-      download: vi.fn(async (options: any) => {
-        const item = {
+      download: vi.fn(async (options: chrome.downloads.DownloadOptions) => {
+        const item: TestDownload = {
           id: nextId++,
           byExtensionId: "extension-test",
           filename: `/downloads/${options.filename}`,
@@ -109,22 +129,22 @@ beforeEach(async () => {
         downloads.push(item);
         return item.id;
       }),
-      search: vi.fn(async (query: any) =>
+      search: vi.fn(async (query: chrome.downloads.DownloadQuery) =>
         query.id === undefined
           ? [...downloads].reverse()
           : downloads.filter((d) => d.id === query.id),
       ),
       pause: vi.fn(async (id: number) => {
-        downloads.find((d) => d.id === id).paused = true;
+        required(downloads.find((d) => d.id === id)).paused = true;
       }),
       resume: vi.fn(async (id: number) => {
-        downloads.find((d) => d.id === id).paused = false;
+        required(downloads.find((d) => d.id === id)).paused = false;
       }),
       cancel: vi.fn(async (id: number) => {
-        Object.assign(
-          downloads.find((d) => d.id === id),
-          { state: "interrupted", error: "USER_CANCELED" },
-        );
+        Object.assign(required(downloads.find((d) => d.id === id)), {
+          state: "interrupted",
+          error: "USER_CANCELED",
+        });
       }),
     },
   });
@@ -144,7 +164,7 @@ async function videoTask(): Promise<Task> {
     item: course.modules[0].lessons[0].items[0],
   });
   await (await db()).put("tasks", task);
-  return (await claim())!;
+  return required(await claim());
 }
 it("defaults to opt-in video with 360p MP4 and validates options", () => {
   expect(videoOptions({})).toEqual({
@@ -152,7 +172,7 @@ it("defaults to opt-in video with 360p MP4 and validates options", () => {
     videoResolution: "360p",
     videoFormat: "mp4",
   });
-  expect(() => videoOptions({ videoResolution: "4k" as any })).toThrow();
+  expect(() => videoOptions({ videoResolution: "4k" })).toThrow();
 });
 it("selects the requested format and highest resolution within the cap", () => {
   expect(videoSource(media, "1080p", "webm").resolution).toBe("1080p");
@@ -197,7 +217,7 @@ it("refreshes the metadata after forbidden signed downloads instead of retrying 
   downloads[0].state = "interrupted";
   downloads[0].error = "SERVER_FORBIDDEN";
   await synchronizeDownloads();
-  const retry = (await claim(Date.now() + 100000))!;
+  const retry = required(await claim(Date.now() + 100000));
   expect(retry.kind).toBe("video");
   // Reset the test clock reservation without sleeping.
   values = {};
@@ -209,7 +229,7 @@ it("recovers the crash window between download initiation and ID persistence", a
   const task = await videoTask();
   await startNativeDownload(task, job, new AbortController().signal);
   const database = await db();
-  const stored = (await database.get("tasks", task.id))!;
+  const stored = required(await database.get("tasks", task.id));
   delete stored.file?.downloadId;
   await database.put("tasks", stored);
   await synchronizeDownloads();

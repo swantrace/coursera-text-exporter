@@ -11,19 +11,20 @@ const starting = new Set<string>();
 
 async function patch(
   task: Task,
-  change: (current: Task) => void,
+  change: (current: Task, file: NativeFile) => void,
 ): Promise<boolean> {
   const database = await db(),
     tx = database.transaction("tasks", "readwrite");
   const current = await tx.store.get(task.id);
   if (
     current?.state !== "downloading" ||
+    !current.file ||
     current.file?.startedAt !== task.file?.startedAt
   ) {
     await tx.done;
     return false;
   }
-  change(current);
+  change(current, current.file);
   await tx.store.put(current);
   await tx.done;
   return true;
@@ -92,8 +93,8 @@ export async function startNativeDownload(
       conflictAction: "overwrite",
       saveAs: false,
     });
-    const attached = await patch(task, (current) => {
-      current.file!.downloadId = id;
+    const attached = await patch(task, (_current, file) => {
+      file.downloadId = id;
     });
     if (blob) await trackBlobDownload(id, url);
     if (!attached) {
@@ -162,8 +163,8 @@ export async function synchronizeDownloads(): Promise<void> {
     if (item.state === "in_progress") {
       if (["paused", "blocked_auth"].includes(job.status) && !item.paused)
         await chrome.downloads.pause(item.id).catch(() => {});
-      await patch(task, (t) => {
-        Object.assign(t.file!, {
+      await patch(task, (_t, file) => {
+        Object.assign(file, {
           downloadId: item.id,
           bytesReceived: item.bytesReceived,
           totalBytes: item.totalBytes,
@@ -172,8 +173,8 @@ export async function synchronizeDownloads(): Promise<void> {
       });
       continue;
     }
-    await patch(task, (t) => {
-      Object.assign(t.file!, {
+    await patch(task, (t, file) => {
+      Object.assign(file, {
         downloadId: item.id,
         bytesReceived: item.bytesReceived,
         totalBytes: item.totalBytes,
