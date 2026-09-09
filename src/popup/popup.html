@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Coursera Text Exporter</title><link rel="stylesheet" href="popup.css"></head>
+<body class="w-[420px] min-h-[560px]">
+<main class="p-5 space-y-5">
+  <header><p class="text-xs tracking-widest text-base-content/60">COURSERA · TEXT EXPORTER</p><h1 class="text-2xl font-semibold mt-1">把课程带走</h1><p class="text-sm text-base-content/70 mt-2">字幕与阅读材料，按课程顺序保存。</p></header>
+  <div id="notice" role="status" aria-live="polite" class="alert text-sm hidden"></div>
+  <form id="start-form" class="space-y-3">
+    <label class="block text-sm" for="course">课程链接或 slug</label>
+    <input id="course" class="input w-full" required placeholder="https://www.coursera.org/learn/…">
+    <div class="sm:flex gap-2"><button id="detect" type="button" class="btn btn-sm">读取当前页面</button><a href="https://www.coursera.org/?authMode=login" target="_blank" rel="noopener" class="btn btn-sm">登录 Coursera</a></div>
+    <label class="block text-sm" for="language">首选字幕语言（缺失时回退）</label>
+    <select id="language" class="select w-full"><option value="en">English · en</option><option value="zh-CN">简体中文 · zh-CN</option><option value="zh-TW">繁體中文 · zh-TW</option><option value="es">Español · es</option><option value="fr">Français · fr</option><option value="de">Deutsch · de</option></select>
+    <label class="block text-sm"><input id="all-languages" type="checkbox" class="checkbox checkbox-sm mr-2">保存所有字幕语言</label>
+    <label class="block text-sm"><input id="readings" type="checkbox" class="checkbox checkbox-sm mr-2" checked>包含阅读材料</label>
+    <label class="block text-sm"><input id="auto-sync" type="checkbox" class="checkbox checkbox-sm mr-2">完成后自动同步至 Drive</label>
+    <button id="start" class="btn w-full" type="submit">开始采集</button>
+  </form>
+  <section class="border-t border-base-300 pt-4 space-y-3" aria-label="任务">
+    <label for="jobs" class="block text-sm">采集记录</label><select id="jobs" class="select w-full"><option value="">暂无任务</option></select>
+    <p id="job-status" class="font-medium">等待开始</p>
+    <progress id="progress" class="progress w-full" value="0" max="1" aria-label="任务完成进度"></progress>
+    <p id="counts" class="text-xs text-base-content/70">关闭弹窗后，后台任务仍会继续。</p>
+    <div class="sm:flex flex-wrap gap-2"><button id="pause" class="btn btn-sm">暂停</button><button id="resume" class="btn btn-sm">继续</button><button id="retry" class="btn btn-sm">重试失败</button><button id="cancel" class="btn btn-sm">取消</button></div>
+    <details><summary class="cursor-pointer text-sm">缺失项与诊断</summary><ul id="issues" class="text-xs space-y-2 mt-2 break-words max-h-48 overflow-auto"></ul></details>
+  </section>
+  <section class="border-t border-base-300 pt-4 space-y-3" aria-label="导出">
+    <label for="format" class="block text-sm">本地导出</label>
+    <div class="sm:flex gap-2"><select id="format" class="select flex-1"><option value="zip">ZIP · 全文、字幕与报告</option><option value="md">Markdown · 全文</option><option value="txt">TXT · 纯文本</option><option value="json">JSON · 结构与诊断</option></select><button id="export" class="btn">导出</button></div>
+    <div class="sm:flex gap-2"><button id="connect" class="btn btn-sm">连接 Google Drive</button><button id="sync" class="btn btn-sm">同步全文</button></div>
+    <p id="drive-status" class="text-xs text-base-content/70"></p>
+    <button id="delete" class="btn btn-sm">删除所选本地记录</button>
+  </section>
+</main><script type="module" src="popup.js"></script>
+</body></html>
