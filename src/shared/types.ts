@@ -1,4 +1,4 @@
-import type { Resolution, VideoFormat } from "./video";
+import type { Resolution, VideoFormat } from './video';
 export interface Item {
   id: string;
   title: string;
@@ -33,11 +33,11 @@ export interface Artifact {
   jobId: string;
   itemId: string;
   title: string;
-  kind: "subtitle" | "reading";
+  kind: 'subtitle' | 'reading';
   language?: string;
   trackKey?: string;
   raw: string;
-  rawFormat: "vtt" | "html" | "md" | "txt";
+  rawFormat: 'vtt' | 'html' | 'md' | 'txt';
   text: string;
   markdown: string;
   cues?: Cue[];
@@ -45,30 +45,30 @@ export interface Artifact {
   warnings: string[];
 }
 export type TaskState =
-  | "pending"
-  | "running"
-  | "downloading"
-  | "retry_wait"
-  | "blocked_auth"
-  | "succeeded"
-  | "skipped"
-  | "failed"
-  | "cancelled";
+  | 'pending'
+  | 'running'
+  | 'downloading'
+  | 'retry_wait'
+  | 'blocked_auth'
+  | 'succeeded'
+  | 'skipped'
+  | 'failed'
+  | 'cancelled';
 export interface Task {
   id: string;
   jobId: string;
   kind:
-    | "outline"
-    | "lecture"
-    | "subtitle"
-    | "reading"
-    | "drive"
-    | "video"
-    | "sidecar";
+    | 'outline'
+    | 'lecture'
+    | 'subtitle'
+    | 'reading'
+    | 'drive'
+    | 'video'
+    | 'sidecar';
   item?: Item;
   language?: string;
   artifactId?: string;
-  sidecarFormat?: "vtt" | "srt";
+  sidecarFormat?: 'vtt' | 'srt';
   assetKey?: string;
   state: TaskState;
   attempts: number;
@@ -104,7 +104,7 @@ export interface Job {
   slug: string;
   createdAt: string;
   options: Options;
-  status: "active" | "paused" | "blocked_auth" | "complete" | "cancelled";
+  status: 'active' | 'paused' | 'blocked_auth' | 'complete' | 'cancelled';
   course?: Course;
 }
 export interface SyncRecord {
@@ -121,7 +121,7 @@ export interface TaskResult {
   skip?: string;
   external?: boolean;
 }
-export type ExportFormat = "md" | "txt" | "json" | "zip";
+export type ExportFormat = 'md' | 'txt' | 'json' | 'zip';
 export interface Snapshot {
   jobs: Job[];
   job?: Job;

@@ -1,24 +1,24 @@
-import { strToU8, zipSync } from "fflate";
-import { toSrt } from "../parsers/webvtt";
-import type { ExportFormat } from "../shared/types";
-import { db } from "../storage/database";
-import { filename, itemPath, subtitleSuffix } from "./paths";
+import { strToU8, zipSync } from 'fflate';
+import { toSrt } from '../parsers/webvtt';
+import type { ExportFormat } from '../shared/types';
+import { db } from '../storage/database';
+import { filename, itemPath, subtitleSuffix } from './paths';
 
-export { filename } from "./paths";
+export { filename } from './paths';
 
 const heading = (value: string) =>
-  value.replace(/[\r\n]+/g, " ").replace(/([\\`*_[\]<>])/g, "\\$1");
+  value.replace(/[\r\n]+/g, ' ').replace(/([\\`*_[\]<>])/g, '\\$1');
 export async function bundle(
   jobId: string,
   format: ExportFormat,
 ): Promise<{ blob: Blob; name: string }> {
   const database = await db(),
-    job = await database.get("jobs", jobId);
-  if (!job) throw new Error("任务不存在。");
+    job = await database.get('jobs', jobId);
+  if (!job) throw new Error('Job not found.');
   const tasks = (
-    await database.getAllFromIndex("tasks", "jobId", jobId)
-  ).filter((t) => t.kind !== "drive");
-  const artifacts = await database.getAllFromIndex("artifacts", "jobId", jobId);
+    await database.getAllFromIndex('tasks', 'jobId', jobId)
+  ).filter((t) => t.kind !== 'drive');
+  const artifacts = await database.getAllFromIndex('artifacts', 'jobId', jobId);
   const title = job.course?.title ?? job.slug;
   const report = {
     createdAt: job.createdAt,
@@ -63,10 +63,10 @@ export async function bundle(
   const files: Record<string, Uint8Array> = {};
   const markdown: string[] = [
     `# ${heading(title)}`,
-    `来源：https://www.coursera.org/learn/${job.slug}`,
-    "",
+    `Source: https://www.coursera.org/learn/${job.slug}`,
+    '',
   ];
-  const text: string[] = [title, ""];
+  const text: string[] = [title, ''];
   const orderedArtifacts = [];
   const course = job.course;
   if (course) {
@@ -84,18 +84,18 @@ export async function bundle(
             .sort((a, b) => a.id.localeCompare(b.id));
           orderedArtifacts.push(...found);
           for (const [ai, artifact] of found.entries()) {
-            const language = artifact.language ? ` (${artifact.language})` : "";
+            const language = artifact.language ? ` (${artifact.language})` : '';
             markdown.push(
-              `[来源](${artifact.source})${language}`,
-              "",
+              `[Source](${artifact.source})${language}`,
+              '',
               artifact.markdown,
-              "",
+              '',
             );
-            text.push(language, artifact.text, "");
+            text.push(language, artifact.text, '');
             const path =
               itemPath(course, item.id) +
               (artifact.cues
-                ? subtitleSuffix(artifact.language ?? "und", artifact.trackKey)
+                ? subtitleSuffix(artifact.language ?? 'und', artifact.trackKey)
                 : `-${ai + 1}`);
             files[`${path}.txt`] = strToU8(artifact.text);
             if (artifact.cues) {
@@ -109,11 +109,11 @@ export async function bundle(
             }
           }
           const issues = tasks.filter(
-            (t) => t.item?.id === item.id && !["succeeded"].includes(t.state),
+            (t) => t.item?.id === item.id && !['succeeded'].includes(t.state),
           );
           for (const issue of issues) {
-            const note = `[${issue.state}] ${issue.error ?? "尚未完成"}${issue.language ? ` (${issue.language})` : ""}`;
-            markdown.push(`> ${heading(note)}`, "");
+            const note = `[${issue.state}] ${issue.error ?? 'Not completed'}${issue.language ? ` (${issue.language})` : ''}`;
+            markdown.push(`> ${heading(note)}`, '');
             text.push(note);
           }
         }
@@ -127,19 +127,22 @@ export async function bundle(
     ),
   ];
   if (warningLines.length) {
-    markdown.push("## 采集提示", ...warningLines.map((w) => `- ${heading(w)}`));
-    text.push("采集提示", ...warningLines);
+    markdown.push(
+      '## Collection notes',
+      ...warningLines.map((w) => `- ${heading(w)}`),
+    );
+    text.push('Collection notes', ...warningLines);
   }
-  files["course.json"] = strToU8(json);
-  files["course.md"] = strToU8(markdown.join("\n\n"));
-  files["course.txt"] = strToU8(text.join("\n"));
-  files["report.json"] = strToU8(JSON.stringify(report, null, 2));
-  const content = format === "zip" ? zipSync(files) : files[`course.${format}`];
+  files['course.json'] = strToU8(json);
+  files['course.md'] = strToU8(markdown.join('\n\n'));
+  files['course.txt'] = strToU8(text.join('\n'));
+  files['report.json'] = strToU8(JSON.stringify(report, null, 2));
+  const content = format === 'zip' ? zipSync(files) : files[`course.${format}`];
   const mime = {
-    zip: "application/zip",
-    md: "text/markdown",
-    txt: "text/plain",
-    json: "application/json",
+    zip: 'application/zip',
+    md: 'text/markdown',
+    txt: 'text/plain',
+    json: 'application/json',
   }[format];
   return {
     blob: new Blob([new Uint8Array(content)], { type: mime }),

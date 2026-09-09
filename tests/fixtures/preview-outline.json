@@ -1,11 +1,7 @@
 {
   "elements": [
     {
-      "moduleIds": [
-        "qxVfc",
-        "VcfIf",
-        "DefAS"
-      ],
+      "moduleIds": ["qxVfc", "VcfIf", "DefAS"],
       "id": "Gv4-81PiEfGVyAr_4g2xqw"
     }
   ],
@@ -115,9 +111,7 @@
         "description": "This module delves into advanced asynchronous programming patterns in Node.js, including async initialization, request batching, and cancelable operations. Learners will also explore strategies for optimizing CPU-bound tasks using worker threads and external processes. Practical examples and real-world scenarios illustrate how to maintain performance and responsiveness in complex applications.",
         "timeCommitment": 5560000,
         "id": "qxVfc",
-        "lessonIds": [
-          "Rd34Q"
-        ],
+        "lessonIds": ["Rd34Q"],
         "slug": "advanced-recipes"
       },
       {
@@ -125,9 +119,7 @@
         "description": "This module guides learners through advanced strategies for scaling Node.js applications, including data partitioning, load balancing, and container orchestration. You will explore architectural patterns such as microservices, API gateways, and dynamic horizontal scaling to build resilient and maintainable systems. Practical examples with tools like Nginx and Kubernetes are included to reinforce real-world application.",
         "timeCommitment": 6947000,
         "id": "VcfIf",
-        "lessonIds": [
-          "Z6Gdi"
-        ],
+        "lessonIds": ["Z6Gdi"],
         "slug": "scalability-and-architectural-patterns"
       },
       {
@@ -135,9 +127,7 @@
         "description": "This module delves into key messaging and integration patterns for building scalable distributed systems in Node.js. Learners will explore publish/subscribe, request/reply, and task distribution models using technologies like Redis, ZeroMQ, and AMQP, and implement practical solutions such as chat applications and distributed task processors. By the end, you'll understand how to design, implement, and integrate robust messaging architectures.",
         "timeCommitment": 7429000,
         "id": "DefAS",
-        "lessonIds": [
-          "76hik"
-        ],
+        "lessonIds": ["76hik"],
         "slug": "messaging-and-integration-patterns"
       }
     ]

@@ -1,4 +1,4 @@
-import type { ExportFormat } from "../shared/types";
+import type { ExportFormat } from '../shared/types';
 
 let creating: Promise<void> | undefined;
 let operations: Promise<unknown> = Promise.resolve();
@@ -15,10 +15,10 @@ async function ensureOffscreen(): Promise<void> {
     });
     if (!contexts.length)
       await chrome.offscreen.createDocument({
-        url: "offscreen/offscreen.html",
+        url: 'offscreen/offscreen.html',
         reasons: [chrome.offscreen.Reason.BLOBS],
         justification:
-          "Create local export Blob URLs without keeping the popup open.",
+          'Create local export Blob URLs without keeping the popup open.',
       });
   })().finally(() => {
     creating = undefined;
@@ -34,12 +34,12 @@ async function performDownload(
 ): Promise<void> {
   await ensureOffscreen();
   const result = await chrome.runtime.sendMessage({
-    target: "offscreen",
-    type: "BUNDLE",
+    target: 'offscreen',
+    type: 'BUNDLE',
     jobId,
     format,
   });
-  if (!result?.ok) throw new Error(result?.error ?? "文件生成失败。");
+  if (!result?.ok) throw new Error(result?.error ?? 'File generation failed.');
   let id: number;
   try {
     id = await chrome.downloads.download({
@@ -49,8 +49,8 @@ async function performDownload(
     });
   } catch (error) {
     await chrome.runtime.sendMessage({
-      target: "offscreen",
-      type: "REVOKE",
+      target: 'offscreen',
+      type: 'REVOKE',
       url: result.url,
     });
     throw error;
@@ -58,7 +58,7 @@ async function performDownload(
   await chrome.storage.local.set({ [`download:${id}`]: result.url });
   // Handle a small download completing before its bookkeeping write.
   const [item] = await chrome.downloads.search({ id });
-  if (item && item.state !== "in_progress") await cleanup(id);
+  if (item && item.state !== 'in_progress') await cleanup(id);
 }
 export function cleanupDownload(id: number): Promise<void> {
   return serialize(() => cleanup(id));
@@ -68,7 +68,7 @@ async function cleanup(id: number): Promise<void> {
     stored = await chrome.storage.local.get(key);
   if (stored[key]) {
     const result = await chrome.runtime
-      .sendMessage({ target: "offscreen", type: "REVOKE", url: stored[key] })
+      .sendMessage({ target: 'offscreen', type: 'REVOKE', url: stored[key] })
       .catch(() => undefined);
     if (result?.empty) await chrome.offscreen.closeDocument();
     await chrome.storage.local.remove(key);
@@ -82,11 +82,12 @@ export function sidecarUrl(
   return serialize(async () => {
     await ensureOffscreen();
     const result = await chrome.runtime.sendMessage({
-      target: "offscreen",
-      type: "SIDECAR",
+      target: 'offscreen',
+      type: 'SIDECAR',
       taskId,
     });
-    if (!result?.ok) throw new Error(result?.error ?? "字幕文件生成失败。");
+    if (!result?.ok)
+      throw new Error(result?.error ?? 'Caption file generation failed.');
     return result;
   });
 }
@@ -96,12 +97,12 @@ export async function trackBlobDownload(
 ): Promise<void> {
   await chrome.storage.local.set({ [`download:${id}`]: url });
   const [item] = await chrome.downloads.search({ id });
-  if (item && item.state !== "in_progress") await cleanupDownload(id);
+  if (item && item.state !== 'in_progress') await cleanupDownload(id);
 }
 export function releaseBlob(url: string): Promise<void> {
   return serialize(async () => {
     const result = await chrome.runtime
-      .sendMessage({ target: "offscreen", type: "REVOKE", url })
+      .sendMessage({ target: 'offscreen', type: 'REVOKE', url })
       .catch(() => undefined);
     if (result?.empty) await chrome.offscreen.closeDocument();
   });

@@ -1,5 +1,5 @@
-import { normalizeError } from "../shared/errors";
-import type { Task } from "../shared/types";
+import { normalizeError } from '../shared/errors';
+import type { Task } from '../shared/types';
 import {
   claim,
   db,
@@ -7,9 +7,9 @@ import {
   reconcile,
   settle,
   snapshot,
-} from "../storage/database";
-import { execute } from "./execute";
-import { synchronizeDownloads } from "./media-downloads";
+} from '../storage/database';
+import { execute } from './execute';
+import { synchronizeDownloads } from './media-downloads';
 
 const active = new Map<string, { task: Task; controller: AbortController }>();
 let pumping: Promise<void> | undefined;
@@ -26,7 +26,7 @@ export async function publish(): Promise<void> {
       status: state.job?.status,
       updatedAt: Date.now(),
       completed: state.tasks.filter((t) =>
-        ["succeeded", "skipped", "failed"].includes(t.state),
+        ['succeeded', 'skipped', 'failed'].includes(t.state),
       ).length,
       total: state.tasks.length,
     },
@@ -39,12 +39,12 @@ async function run(task: Task): Promise<void> {
   const renewal = setInterval(() => {
     void (async () => {
       const database = await db(),
-        tx = database.transaction("tasks", "readwrite");
+        tx = database.transaction('tasks', 'readwrite');
       const current = await tx.store.get(task.id);
       if (
         current &&
         current.lease === task.lease &&
-        current.state === "running"
+        current.state === 'running'
       ) {
         current.leaseUntil = Date.now() + 90_000;
         await tx.store.put(current);
@@ -57,16 +57,16 @@ async function run(task: Task): Promise<void> {
     if (!result.external) await settle(task, result);
   } catch (error) {
     const e = normalizeError(error);
-    const soft = ["RATE_WAIT", "UPLOAD_PROGRESS"].includes(e.code);
+    const soft = ['RATE_WAIT', 'UPLOAD_PROGRESS'].includes(e.code);
     const attempts = task.attempts + (soft ? 0 : 1);
     const retry = e.retryable && (soft || attempts <= 4);
-    const auth = ["COURSERA_AUTH", "GOOGLE_AUTH", "GOOGLE_CONFIG"].includes(
+    const auth = ['COURSERA_AUTH', 'GOOGLE_AUTH', 'GOOGLE_CONFIG'].includes(
       e.code,
     );
     await fail(
       task,
       {
-        state: auth ? "blocked_auth" : retry ? "retry_wait" : "failed",
+        state: auth ? 'blocked_auth' : retry ? 'retry_wait' : 'failed',
         code: e.code,
         error: e.message,
         attempts,
@@ -78,10 +78,10 @@ async function run(task: Task): Promise<void> {
               : Math.random() * Math.min(60_000, 1000 * 2 ** attempts)),
         ),
       },
-      e.code === "COURSERA_AUTH"
-        ? "blocked_auth"
-        : e.code === "STORAGE_FULL"
-          ? "paused"
+      e.code === 'COURSERA_AUTH'
+        ? 'blocked_auth'
+        : e.code === 'STORAGE_FULL'
+          ? 'paused'
           : undefined,
     );
   } finally {
@@ -102,8 +102,8 @@ export function kick(): Promise<void> {
   return pumping;
 }
 async function pump(): Promise<void> {
-  if (!(await chrome.alarms.get("queue-recovery")))
-    await chrome.alarms.create("queue-recovery", { periodInMinutes: 0.5 });
+  if (!(await chrome.alarms.get('queue-recovery')))
+    await chrome.alarms.create('queue-recovery', { periodInMinutes: 0.5 });
   // Short dispatch window; each batch finishes before another is claimed. Alarm recovers termination.
   const deadline = Date.now() + 15_000;
   do {
@@ -115,41 +115,41 @@ async function pump(): Promise<void> {
       if (!task) break;
       batch.push(task);
       // Drive tasks are serialized across jobs by one-task batches.
-      if (task.kind === "drive") break;
+      if (task.kind === 'drive') break;
     }
     if (!batch.length) break;
     // Keep Drive execution exclusive even if it was claimed after collection tasks.
-    await Promise.all(batch.filter((t) => t.kind !== "drive").map(run));
-    for (const task of batch.filter((t) => t.kind === "drive")) await run(task);
+    await Promise.all(batch.filter((t) => t.kind !== 'drive').map(run));
+    for (const task of batch.filter((t) => t.kind === 'drive')) await run(task);
     await publish();
   } while (Date.now() < deadline);
   await reconcile();
   await publish();
   const database = await db(),
-    jobs = await database.getAll("jobs"),
-    tasks = await database.getAll("tasks");
+    jobs = await database.getAll('jobs'),
+    tasks = await database.getAll('tasks');
   const activeIds = new Set(
-    jobs.filter((j) => j.status === "active").map((j) => j.id),
+    jobs.filter((j) => j.status === 'active').map((j) => j.id),
   );
   const waiting = tasks.filter(
     (t) =>
       activeIds.has(t.jobId) &&
-      ["pending", "retry_wait", "running", "downloading"].includes(t.state),
+      ['pending', 'retry_wait', 'running', 'downloading'].includes(t.state),
   );
   if (waiting.length) {
     const next = Math.min(
       ...waiting.map((t) =>
-        t.state === "downloading"
+        t.state === 'downloading'
           ? Date.now() + 30_000
-          : t.state === "running"
+          : t.state === 'running'
             ? (t.leaseUntil ?? Date.now())
             : Math.max(
                 t.nextAt,
-                ["video", "sidecar"].includes(t.kind) ? Date.now() + 2000 : 0,
+                ['video', 'sidecar'].includes(t.kind) ? Date.now() + 2000 : 0,
               ),
       ),
     );
-    await chrome.alarms.create("queue-next", {
+    await chrome.alarms.create('queue-next', {
       when: Math.max(Date.now() + 500, next),
     });
     // Fast continuation while alive; alarm remains the durable fallback.
@@ -161,8 +161,8 @@ async function pump(): Promise<void> {
         Math.max(500, next - Date.now()),
       );
   } else {
-    await chrome.alarms.clear("queue-recovery");
-    await chrome.alarms.clear("queue-next");
+    await chrome.alarms.clear('queue-recovery');
+    await chrome.alarms.clear('queue-next');
   }
 }
 export function reportFailure(error: unknown): void {

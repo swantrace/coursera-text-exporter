@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Coursera Text Exporter",
-  "description": "通过课程 API 采集字幕与阅读材料，支持断点恢复、本地导出及 Google Drive 同步。",
+  "description": "Collect captions and readings through the course API with resumable jobs, local export, and Google Drive sync.",
   "version": "0.2.0",
   "minimum_chrome_version": "120",
   "permissions": ["identity", "storage", "alarms", "downloads", "offscreen"],

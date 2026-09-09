@@ -7,15 +7,15 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run check:biome && npm run typecheck && npm test && npm run build",
+    "check": "npm run format:check && npm run typecheck && npm test && npm run build",
     "smoke": "node scripts/smoke.mjs",
     "smoke:video": "node scripts/smoke-video.mjs",
     "smoke:video:live": "node scripts/smoke-video.mjs --live-preview",
-    "check:write": "biome check --write --unsafe --error-on-warnings",
     "prepare": "husky",
     "lint:staged": "lint-staged",
     "test:hooks": "node scripts/test-hooks.mjs",
-    "check:biome": "biome check --error-on-warnings"
+    "format": "biome check --write --unsafe --error-on-warnings .",
+    "format:check": "biome check --error-on-warnings ."
   },
   "dependencies": {
     "fflate": "^0.8.3",
@@ -39,6 +39,6 @@
     "vitest": "^5.0.0"
   },
   "lint-staged": {
-    "*": "npm run check:write -- --no-errors-on-unmatched"
+    "*": "npm run format -- --no-errors-on-unmatched"
   }
 }

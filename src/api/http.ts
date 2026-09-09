@@ -1,25 +1,25 @@
-import { AppError } from "../shared/errors";
+import { AppError } from '../shared/errors';
 
 declare const __ASSET_ORIGINS__: string[];
 const configuredOrigins =
-  typeof __ASSET_ORIGINS__ === "undefined" ? [] : __ASSET_ORIGINS__;
+  typeof __ASSET_ORIGINS__ === 'undefined' ? [] : __ASSET_ORIGINS__;
 const allowed = new Set([
-  "https://www.coursera.org",
-  "https://www.googleapis.com",
-  "https://d3c33hcgiwev3.cloudfront.net",
+  'https://www.coursera.org',
+  'https://www.googleapis.com',
+  'https://d3c33hcgiwev3.cloudfront.net',
   ...configuredOrigins,
 ]);
 export function validateUrl(input: string): URL {
-  const url = new URL(input, "https://www.coursera.org");
+  const url = new URL(input, 'https://www.coursera.org');
   if (
-    url.protocol !== "https:" ||
+    url.protocol !== 'https:' ||
     url.username ||
     url.password ||
     !allowed.has(url.origin)
   ) {
     throw new AppError(
-      "HOST_PERMISSION",
-      `资源域名未配置：${url.origin}。将此 HTTPS origin 加入 config.local.json 的 assetOrigins 后重新构建、加载。`,
+      'HOST_PERMISSION',
+      `Asset origin is not configured: ${url.origin}. Add this HTTPS origin to assetOrigins in config.local.json, then rebuild and reload.`,
     );
   }
   return url;
@@ -39,9 +39,14 @@ export async function pace(origin: string, signal: AbortSignal): Promise<void> {
     const stored = await chrome.storage.local.get(key);
     until = Math.max(Date.now(), Number(stored[key] ?? 0));
     if (until - Date.now() > 1500)
-      throw new AppError("RATE_WAIT", "等待请求冷却。", true, until);
+      throw new AppError(
+        'RATE_WAIT',
+        'Wait for the request cooldown.',
+        true,
+        until,
+      );
     await chrome.storage.local.set({
-      [key]: until + (origin === "https://www.googleapis.com" ? 250 : 500),
+      [key]: until + (origin === 'https://www.googleapis.com' ? 250 : 500),
     });
   });
   reservation = next.catch(() => {});
@@ -51,13 +56,13 @@ export async function pace(origin: string, signal: AbortSignal): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const stop = () => {
         clearTimeout(timer);
-        reject(new DOMException("Cancelled", "AbortError"));
+        reject(new DOMException('Cancelled', 'AbortError'));
       };
       const timer = setTimeout(() => {
-        signal.removeEventListener("abort", stop);
+        signal.removeEventListener('abort', stop);
         resolve();
       }, delay);
-      signal.addEventListener("abort", stop, { once: true });
+      signal.addEventListener('abort', stop, { once: true });
       if (signal.aborted) stop();
     });
 }
@@ -72,40 +77,40 @@ export async function requestText(
   try {
     const response = await fetch(url, {
       credentials:
-        url.origin === "https://www.coursera.org" ? "include" : "omit",
+        url.origin === 'https://www.coursera.org' ? 'include' : 'omit',
       headers: {
-        Accept: json ? "application/json" : "text/vtt,text/html,text/plain,*/*",
+        Accept: json ? 'application/json' : 'text/vtt,text/html,text/plain,*/*',
       },
       signal: AbortSignal.any([signal, timeout]),
-      redirect: "follow",
+      redirect: 'follow',
     });
     validateUrl(response.url || url.href);
     if (response.status === 401)
       throw new AppError(
-        "COURSERA_AUTH",
-        "Coursera 登录已失效，请在同一 Chrome 配置文件中登录后继续。",
+        'COURSERA_AUTH',
+        'Coursera login expired. Sign in using the same Chrome profile and continue.',
       );
     if (response.status === 403)
       throw new AppError(
-        "FORBIDDEN",
-        "资源访问被拒绝，可能是签名过期或课时权限限制。",
+        'FORBIDDEN',
+        'Resource access was denied. The signature may have expired or the item may be restricted.',
       );
     if (response.status === 404)
-      throw new AppError("NOT_FOUND", "课程或资源不存在。");
+      throw new AppError('NOT_FOUND', 'The course or resource does not exist.');
     if (
       response.status === 429 ||
       response.status === 408 ||
       [500, 502, 503, 504].includes(response.status)
     ) {
       const retryAt = Math.max(
-        retryAfter(response.headers.get("Retry-After")),
+        retryAfter(response.headers.get('Retry-After')),
         Date.now() + 2000,
       );
       if (response.status === 429)
         await chrome.storage.local.set({ [`rate:${url.origin}`]: retryAt });
       throw new AppError(
         `HTTP_${response.status}`,
-        `服务器暂时不可用（${response.status}）。`,
+        `The server is temporarily unavailable (${response.status}).`,
         true,
         retryAt,
       );
@@ -114,7 +119,7 @@ export async function requestText(
       throw new AppError(`HTTP_${response.status}`, `HTTP ${response.status}`);
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
-    let text = "",
+    let text = '',
       bytes = 0;
     if (reader)
       for (;;) {
@@ -124,8 +129,8 @@ export async function requestText(
         if (bytes > 25 * 1024 * 1024) {
           await reader.cancel();
           throw new AppError(
-            "RESOURCE_TOO_LARGE",
-            "单个文本资源超过 25 MiB，已停止读取。",
+            'RESOURCE_TOO_LARGE',
+            'A text resource exceeds 25 MiB; reading stopped.',
           );
         }
         text += decoder.decode(chunk.value, { stream: true });
@@ -136,17 +141,17 @@ export async function requestText(
       /\/login(?:[/?]|$)|authMode=login/.test(response.url)
     ) {
       throw new AppError(
-        "COURSERA_AUTH",
-        "API 返回了登录或验证页面，请登录 Coursera 后重试。",
+        'COURSERA_AUTH',
+        'The API returned a login or verification page. Sign in to Coursera and try again.',
       );
     }
     return text;
   } catch (e) {
     if (e instanceof AppError) throw e;
-    if (signal.aborted) throw new AppError("ABORTED", "任务已停止。");
+    if (signal.aborted) throw new AppError('ABORTED', 'The job was stopped.');
     throw new AppError(
-      "NETWORK",
-      "网络请求失败或超时。请检查网络与资源域名权限。",
+      'NETWORK',
+      'The network request failed or timed out. Check the network and asset host permissions.',
       true,
     );
   }
@@ -159,6 +164,6 @@ export async function getJson(
   try {
     return JSON.parse(text);
   } catch {
-    throw new AppError("SCHEMA_MISMATCH", "API 返回了无法解析的 JSON。");
+    throw new AppError('SCHEMA_MISMATCH', 'The API returned invalid JSON.');
   }
 }
