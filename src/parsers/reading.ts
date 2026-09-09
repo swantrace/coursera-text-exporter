@@ -134,3 +134,11 @@ export function htmlToText(html: string): string {
 export function markdownToText(markdown: string): string {
   return htmlToText(micromark(markdown));
 }
+
+/** Normalize legacy multiline single-backtick code blocks to Markdown fences. */
+export function normalizeMarkdownCode(markdown: string): string {
+  return markdown.replace(
+    /(?<!`)`([^`\n]*\n[\s\S]*?)`(?!`)/g,
+    (_, code: string) => `\n\n\`\`\`\n${code.trim()}\n\`\`\`\n\n`,
+  );
+}

@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { chooseTracks, readingAssets, tracks } from '../src/api/coursera';
 import { retryAfter, validateUrl } from '../src/api/http';
 import { parseCourse } from '../src/parsers/course';
-import { htmlToMarkdown, htmlToText } from '../src/parsers/reading';
+import {
+  htmlToMarkdown,
+  htmlToText,
+  normalizeMarkdownCode,
+} from '../src/parsers/reading';
 import { parseVtt, toSrt } from '../src/parsers/webvtt';
 import { slugFromInput } from '../src/shared/errors';
 import { lecture, outline, reading, vtt } from './fixtures';
@@ -134,4 +138,11 @@ it('parses supported CML and rejects unrecognized semantic elements', () => {
       ),
     ),
   ).toThrow(/unsupported/i);
+});
+it('normalizes multiline single-backtick code to fenced blocks', () => {
+  const source =
+    '`resources = [socketA, socketB]\nwhile (!resources.isEmpty()) {\n  consumeData(data)\n}`';
+  expect(normalizeMarkdownCode(source)).toBe(
+    '\n\n```\nresources = [socketA, socketB]\nwhile (!resources.isEmpty()) {\n  consumeData(data)\n}\n```\n\n',
+  );
 });

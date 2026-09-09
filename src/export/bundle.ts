@@ -1,4 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
+import { normalizeMarkdownCode } from '../parsers/reading';
 import { toSrt } from '../parsers/webvtt';
 import type { ExportFormat } from '../shared/types';
 import { db } from '../storage/database';
@@ -88,7 +89,7 @@ export async function bundle(
             markdown.push(
               `[Source](${artifact.source})${language}`,
               '',
-              artifact.markdown,
+              normalizeMarkdownCode(artifact.markdown),
               '',
             );
             text.push(language, artifact.text, '');
@@ -102,7 +103,9 @@ export async function bundle(
               files[`${path}.vtt`] = strToU8(artifact.raw);
               files[`${path}.srt`] = strToU8(toSrt(artifact.cues));
             } else {
-              files[`${path}.md`] = strToU8(artifact.markdown);
+              files[`${path}.md`] = strToU8(
+                normalizeMarkdownCode(artifact.markdown),
+              );
               files[`${path}.source.${artifact.rawFormat}`] = strToU8(
                 artifact.raw,
               );
