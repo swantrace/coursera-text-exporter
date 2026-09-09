@@ -1,0 +1,23 @@
+{
+  "elements": [
+    {
+      "itemId": "04z9N",
+      "id": "Gv4-81PiEfGVyAr_4g2xqw~04z9N",
+      "courseId": "Gv4-81PiEfGVyAr_4g2xqw"
+    }
+  ],
+  "paging": {},
+  "linked": {
+    "onDemandVideos.v1": [
+      {
+        "subtitles": {
+          "en": "/api/subtitleAssetProxy.v1/fixture?fileExtension=srt"
+        },
+        "subtitlesVtt": {
+          "en": "/api/subtitleAssetProxy.v1/fixture?fileExtension=vtt"
+        },
+        "id": "lV8NqGY8"
+      }
+    ]
+  }
+}
