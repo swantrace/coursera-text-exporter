@@ -149,3 +149,24 @@ npm run smoke:video:live
 ```
 
 `smoke:video` 使用合成 API 响应和本地测试视频字节，但通过真正的 Chrome 下载管理器落盘，并核对视频/SRT/VTT 文件名与内容。`smoke:video:live` 使用该课程第一节公开预览的真实视频元数据、字幕与 CDN 文件，采集范围仅为这一节，测试文件保存在隔离临时目录并在结束后清理；不代表整门付费课程已通过登录态验证。
+
+## Git 提交检查
+
+项目已配置 Husky + lint-staged。安装开发依赖后，`npm install` / `npm ci` 的 `prepare` 生命周期会自动启用 `.husky/pre-commit`；当前仓库也已启用。需要 Node.js 22.22.1 及以上（本项目使用 Node.js 24 验证）。
+
+每次普通 `git commit` 会通过 lint-staged 对暂存文件执行：
+
+```bash
+npm run check:write -- --no-errors-on-unmatched <暂存文件列表>
+```
+
+该命令运行项目本地的 Biome，执行格式化、导入整理及现有 `--unsafe` 自动修复。修复结果自动加入本次暂存内容；部分暂存文件的未暂存改动会先隐藏、检查后恢复。出现无法自动修复的错误时，提交失败，lint-staged 恢复检查前状态。不要用 `git add .` 自动混入无关修改。
+
+Biome 遵循 `.gitignore`，不处理 `dist`、`node_modules`、`.local` 等生成或本地目录；不支持的文件类型跳过。规则告警沿用 Biome 的默认级别，错误会阻止提交。
+
+```bash
+npm run check:write   # 手动检查并修复整个项目
+npm run test:hooks    # 在隔离临时 Git 仓库验证真实提交成功、失败阻断、部分暂存保护
+```
+
+提交钩子检查的是本次暂存文件；完整类型检查、测试与构建仍使用 `npm run check`。

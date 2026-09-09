@@ -10,7 +10,11 @@
     "check": "npm run typecheck && npm test && npm run build",
     "smoke": "node scripts/smoke.mjs",
     "smoke:video": "node scripts/smoke-video.mjs",
-    "smoke:video:live": "node scripts/smoke-video.mjs --live-preview"
+    "smoke:video:live": "node scripts/smoke-video.mjs --live-preview",
+    "check:write": "biome check --write --unsafe",
+    "prepare": "husky",
+    "lint:staged": "lint-staged",
+    "test:hooks": "node scripts/test-hooks.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.3",
@@ -19,6 +23,7 @@
     "parse5": "^8.0.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.11",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/cli": "^4.3.3",
     "@types/chrome": "^0.2.9",
@@ -26,8 +31,13 @@
     "daisyui": "^5.7.32",
     "esbuild": "^0.28.2",
     "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
+  },
+  "lint-staged": {
+    "*": "npm run check:write -- --no-errors-on-unmatched"
   }
 }

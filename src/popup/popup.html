@@ -29,16 +29,16 @@
     <p id="job-status" class="font-medium">等待开始</p>
     <progress id="progress" class="progress w-full" value="0" max="1" aria-label="任务完成进度"></progress>
     <p id="counts" class="text-xs text-base-content/70">关闭弹窗后，后台任务仍会继续。</p>
-    <div class="sm:flex flex-wrap gap-2"><button id="pause" class="btn btn-sm">暂停</button><button id="resume" class="btn btn-sm">继续</button><button id="retry" class="btn btn-sm">重试失败</button><button id="cancel" class="btn btn-sm">取消</button></div>
+    <div class="sm:flex flex-wrap gap-2"><button type="button" id="pause" class="btn btn-sm">暂停</button><button type="button" id="resume" class="btn btn-sm">继续</button><button type="button" id="retry" class="btn btn-sm">重试失败</button><button type="button" id="cancel" class="btn btn-sm">取消</button></div>
     <p id="video-status" class="text-xs text-base-content/70 break-words"></p>
     <details><summary class="cursor-pointer text-sm">缺失项与诊断</summary><ul id="issues" class="text-xs space-y-2 mt-2 break-words max-h-48 overflow-auto"></ul></details>
   </section>
   <section class="border-t border-base-300 pt-4 space-y-3" aria-label="导出">
     <label for="format" class="block text-sm">本地导出</label>
-    <div class="sm:flex gap-2"><select id="format" class="select flex-1"><option value="zip">ZIP · 全文、字幕与报告</option><option value="md">Markdown · 全文</option><option value="txt">TXT · 纯文本</option><option value="json">JSON · 结构与诊断</option></select><button id="export" class="btn">导出</button></div>
-    <div class="sm:flex gap-2"><button id="connect" class="btn btn-sm">连接 Google Drive</button><button id="sync" class="btn btn-sm">同步全文</button></div>
+    <div class="sm:flex gap-2"><select id="format" class="select flex-1"><option value="zip">ZIP · 全文、字幕与报告</option><option value="md">Markdown · 全文</option><option value="txt">TXT · 纯文本</option><option value="json">JSON · 结构与诊断</option></select><button type="button" id="export" class="btn">导出</button></div>
+    <div class="sm:flex gap-2"><button type="button" id="connect" class="btn btn-sm">连接 Google Drive</button><button type="button" id="sync" class="btn btn-sm">同步全文</button></div>
     <p id="drive-status" class="text-xs text-base-content/70"></p>
-    <button id="delete" class="btn btn-sm">删除所选本地记录</button>
+    <button type="button" id="delete" class="btn btn-sm">删除所选本地记录</button>
   </section>
 </main><script type="module" src="popup.js"></script>
 </body></html>

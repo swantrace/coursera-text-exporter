@@ -2,6 +2,7 @@ import type { Course, Job } from "../shared/types";
 export function filename(value: string): string {
   const clean =
     value
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: filenames must exclude ASCII control characters.
       .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
       .replace(/\.{2,}/g, "-")
       .replace(/[. ]+$/g, "")
