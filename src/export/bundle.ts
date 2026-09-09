@@ -92,13 +92,15 @@ export async function bundle(
               normalizeMarkdownCode(artifact.markdown),
               '',
             );
-            text.push(language, artifact.text, '');
+            text.push(language, normalizeMarkdownCode(artifact.text), '');
             const path =
               itemPath(course, item.id) +
               (artifact.cues
                 ? subtitleSuffix(artifact.language ?? 'und', artifact.trackKey)
                 : `-${ai + 1}`);
-            files[`${path}.txt`] = strToU8(artifact.text);
+            files[`${path}.txt`] = strToU8(
+              normalizeMarkdownCode(artifact.text),
+            );
             if (artifact.cues) {
               files[`${path}.vtt`] = strToU8(artifact.raw);
               files[`${path}.srt`] = strToU8(toSrt(artifact.cues));
