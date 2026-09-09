@@ -1,6 +1,6 @@
 {
   "name": "coursera-text-exporter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:video": "node scripts/smoke-video.mjs",
+    "smoke:video:live": "node scripts/smoke-video.mjs --live-preview"
   },
   "dependencies": {
     "fflate": "^0.8.3",

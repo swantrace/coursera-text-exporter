@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Coursera Text Exporter</title><link rel="stylesheet" href="popup.css"></head>
 <body class="w-[420px] min-h-[560px]">
 <main class="p-5 space-y-5">
-  <header><p class="text-xs tracking-widest text-base-content/60">COURSERA · TEXT EXPORTER</p><h1 class="text-2xl font-semibold mt-1">把课程带走</h1><p class="text-sm text-base-content/70 mt-2">字幕与阅读材料，按课程顺序保存。</p></header>
+  <header><p class="text-xs tracking-widest text-base-content/60">COURSERA · TEXT EXPORTER</p><h1 class="text-2xl font-semibold mt-1">把课程带走</h1><p class="text-sm text-base-content/70 mt-2">字幕、阅读与可选视频，按课程顺序保存。</p></header>
   <div id="notice" role="status" aria-live="polite" class="alert text-sm hidden"></div>
   <form id="start-form" class="space-y-3">
     <label class="block text-sm" for="course">课程链接或 slug</label>
@@ -13,6 +13,14 @@
     <select id="language" class="select w-full"><option value="en">English · en</option><option value="zh-CN">简体中文 · zh-CN</option><option value="zh-TW">繁體中文 · zh-TW</option><option value="es">Español · es</option><option value="fr">Français · fr</option><option value="de">Deutsch · de</option></select>
     <label class="block text-sm"><input id="all-languages" type="checkbox" class="checkbox checkbox-sm mr-2">保存所有字幕语言</label>
     <label class="block text-sm"><input id="readings" type="checkbox" class="checkbox checkbox-sm mr-2" checked>包含阅读材料</label>
+    <label class="block text-sm"><input id="videos" type="checkbox" class="checkbox checkbox-sm mr-2">同时下载视频及同名字幕</label>
+    <fieldset id="video-options" class="space-y-2" disabled>
+      <label class="block text-sm" for="video-resolution">视频最高分辨率</label>
+      <select id="video-resolution" class="select w-full"><option value="1080p">1080p</option><option value="720p">720p</option><option value="360p" selected>360p（默认）</option><option value="240p">240p</option></select>
+      <label class="block text-sm" for="video-format">视频格式</label>
+      <select id="video-format" class="select w-full"><option value="mp4" selected>MP4（默认）</option><option value="webm">WebM</option></select>
+      <p class="text-xs text-base-content/70">选择不超过上限的最高可用分辨率。视频及 SRT / VTT 自动保存到下载目录的课程文件夹。</p>
+    </fieldset>
     <label class="block text-sm"><input id="auto-sync" type="checkbox" class="checkbox checkbox-sm mr-2">完成后自动同步至 Drive</label>
     <button id="start" class="btn w-full" type="submit">开始采集</button>
   </form>
@@ -22,6 +30,7 @@
     <progress id="progress" class="progress w-full" value="0" max="1" aria-label="任务完成进度"></progress>
     <p id="counts" class="text-xs text-base-content/70">关闭弹窗后，后台任务仍会继续。</p>
     <div class="sm:flex flex-wrap gap-2"><button id="pause" class="btn btn-sm">暂停</button><button id="resume" class="btn btn-sm">继续</button><button id="retry" class="btn btn-sm">重试失败</button><button id="cancel" class="btn btn-sm">取消</button></div>
+    <p id="video-status" class="text-xs text-base-content/70 break-words"></p>
     <details><summary class="cursor-pointer text-sm">缺失项与诊断</summary><ul id="issues" class="text-xs space-y-2 mt-2 break-words max-h-48 overflow-auto"></ul></details>
   </section>
   <section class="border-t border-base-300 pt-4 space-y-3" aria-label="导出">
