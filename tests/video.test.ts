@@ -15,6 +15,7 @@ import { courseFolder, itemPath, subtitleSuffix } from '../src/export/paths';
 import { parseCourse } from '../src/parsers/course';
 import type { Job, Task } from '../src/shared/types';
 import { videoOptions } from '../src/shared/video';
+import * as storage from '../src/storage/database';
 import {
   claim,
   control,
@@ -210,6 +211,49 @@ it('starts Chrome downloads and only completes the task after disk download comp
     100,
   );
   expect(JSON.stringify(state)).not.toContain('cloudfront.net');
+});
+it('keeps the Chrome startup error and filename without persisting signed URLs', async () => {
+  const task = await videoTask();
+  vi.mocked(chrome.downloads.download).mockRejectedValueOnce(
+    new Error('Invalid filename: https://cdn.test/video.mp4?Signature=secret'),
+  );
+  await startNativeDownload(task, job, new AbortController().signal);
+  const stored = required(await (await db()).get('tasks', task.id));
+  expect(stored.state).toBe('failed');
+  expect(stored.code).toBe('DOWNLOAD_START');
+  expect(stored.error).toContain('Invalid filename');
+  expect(stored.error).toContain(stored.file?.filename);
+  expect(stored.error).not.toContain('Signature=secret');
+});
+it('recovers a post-start failure without marking a live download as failed', async () => {
+  const task = await videoTask();
+  const database = await db();
+  const connection = vi.spyOn(storage, 'db').mockResolvedValue(database);
+  const get = vi
+    .spyOn(database, 'get')
+    .mockRejectedValueOnce(new Error('Status read failed'));
+  try {
+    await startNativeDownload(task, job, new AbortController().signal);
+  } finally {
+    get.mockRestore();
+    connection.mockRestore();
+  }
+  const stored = required(await database.get('tasks', task.id));
+  expect(stored.state).toBe('downloading');
+  expect(stored.code).toBe('DOWNLOAD_BOOKKEEPING');
+  expect(stored.file?.downloadId).toBe(downloads[0].id);
+  expect(chrome.downloads.cancel).not.toHaveBeenCalled();
+  downloads[0].state = 'complete';
+  await synchronizeDownloads();
+  expect((await database.get('tasks', task.id))?.state).toBe('succeeded');
+  expect(chrome.downloads.download).toHaveBeenCalledTimes(1);
+});
+it('cleans directory endings after truncating long course titles', () => {
+  const longCourse = structuredClone(course);
+  longCourse.modules[0].title = `${'A'.repeat(34)} trailing title`;
+  longCourse.modules[0].lessons[0].title = `${'B'.repeat(34)}. remaining title`;
+  const path = itemPath(longCourse, 'v1');
+  expect(path.split('/').every((segment) => !/[. ]$/.test(segment))).toBe(true);
 });
 it('refreshes the metadata after forbidden signed downloads instead of retrying a stale URL', async () => {
   const task = await videoTask();

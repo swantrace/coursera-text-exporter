@@ -85,7 +85,7 @@ async function refresh(): Promise<void> {
     .filter((t) => t.error || t.state === 'blocked_auth')
     .map(
       (t) =>
-        `${t.item?.title ?? t.kind}${t.language ? ` (${t.language})` : ''}：${t.error ?? t.state}${t.code ? ` [${t.code}]` : ''}`,
+        `${t.item?.title ?? t.kind} [${t.kind}${t.sidecarFormat ? `/${t.sidecarFormat}` : ''}]${t.language ? ` (${t.language})` : ''}: ${t.error ?? t.state}${t.code ? ` [${t.code}]` : ''}`,
     );
   issues.push(
     ...tasks

@@ -89,6 +89,7 @@ export async function startNativeDownload(
   await tx.done;
   task.file = file;
   starting.add(task.id);
+  let downloadId: number | undefined;
   try {
     const id = await chrome.downloads.download({
       url,
@@ -96,6 +97,7 @@ export async function startNativeDownload(
       conflictAction: 'overwrite',
       saveAs: false,
     });
+    downloadId = id;
     const attached = await patch(task, (_current, file) => {
       file.downloadId = id;
     });
@@ -109,13 +111,27 @@ export async function startNativeDownload(
       await chrome.downloads.cancel(id).catch(() => {});
     else if (latest.status === 'paused' || latest.status === 'blocked_auth')
       await chrome.downloads.pause(id).catch(() => {});
-  } catch {
+  } catch (error) {
+    // Once Chrome owns the download, let reconciliation recover bookkeeping.
+    // Revoking its Blob or marking it failed here could interrupt a live file.
+    if (downloadId !== undefined) {
+      await patch(task, (current, file) => {
+        file.downloadId = downloadId;
+        current.code = 'DOWNLOAD_BOOKKEEPING';
+        current.error = 'Download started; its status will be checked again.';
+      });
+      return;
+    }
     if (blob) await releaseBlob(url).catch(() => {});
+    const detail = (error instanceof Error ? error.message : String(error))
+      .split(url)
+      .join('[download URL]')
+      .replace(/(?:https?:\/\/|blob:)[^\s"'<>]+/gi, '[URL]')
+      .slice(0, 500);
     await patch(task, (current) => {
       current.state = 'failed';
       current.code = 'DOWNLOAD_START';
-      current.error =
-        'Chrome could not start the download. Check download permissions and try again.';
+      current.error = `Chrome rejected ${task.kind === 'sidecar' ? `${task.sidecarFormat?.toUpperCase()} caption` : 'video'} download: ${detail || 'Unknown error'}. File: ${file.filename}`;
     });
   } finally {
     starting.delete(task.id);
