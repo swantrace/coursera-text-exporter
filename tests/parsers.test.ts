@@ -146,3 +146,29 @@ it('normalizes multiline single-backtick code to fenced blocks', () => {
     '\n\n```\nresources = [socketA, socketB]\nwhile (!resources.isEmpty()) {\n  consumeData(data)\n}\n```\n\n',
   );
 });
+it('exports nested CML var placeholders as literal fenced code', () => {
+  const result = readingAssets({
+    elements: [{}],
+    linked: {
+      'openCourseAssets.v1': [
+        {
+          id: 'variables',
+          typeName: 'cml',
+          definition: {
+            value:
+              '<co-content><p>Before</p><span><var><span>&lt;VpcId&gt;</span></var></span>&#x20;<p>After</p></co-content>',
+          },
+        },
+      ],
+    },
+  });
+  const html = result.assets[0].content ?? '';
+  expect(result.unsupported).toBe(0);
+  expect(html).toContain('<code><span>&lt;VpcId&gt;</span></code>');
+  const markdown = htmlToMarkdown(html, 'https://www.coursera.org');
+  expect(markdown).toContain('\n\n```\n<VpcId>\n```\n\n');
+  expect(markdown).toContain('Before');
+  expect(markdown).toContain('After');
+  expect(markdown).not.toContain('&#x20;');
+  expect(htmlToText(html)).toContain('<VpcId>');
+});

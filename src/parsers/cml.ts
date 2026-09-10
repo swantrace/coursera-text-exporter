@@ -49,6 +49,7 @@ export function cmlToHtml(value: string): string {
     'list-item': 'li',
     'code-block': 'pre',
     'inline-code': 'code',
+    var: 'code',
     link: 'a',
     math: 'code',
     'inline-math': 'code',
