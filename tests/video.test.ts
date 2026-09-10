@@ -331,6 +331,46 @@ it('creates a video task independently of the subtitle discovery task', async ()
     result.children?.some((t) => t.kind === 'lecture' && t.item?.id === 'v1'),
   ).toBe(true);
 });
+it('requests locked outline entries and skips them without blocking accessible items', async () => {
+  const response = structuredClone(outline);
+  const locked = required(
+    response.linked['onDemandCourseMaterialItems.v2'].find(
+      (item) => item.id === 'locked',
+    ),
+  );
+  locked.contentSummary.typeName = 'staffGraded';
+  locked.name = 'Bonus questions';
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: URL) => {
+      const query = new URL(input).searchParams;
+      expect(query.get('fields')).toContain('isLocked');
+      if (query.get('showLockedItems') !== 'true') {
+        response.linked['onDemandCourseMaterialItems.v2'] = response.linked[
+          'onDemandCourseMaterialItems.v2'
+        ].filter((item) => item.id !== 'locked');
+      }
+      return new Response(JSON.stringify(response));
+    }),
+  );
+  const result = await execute(
+    newTask(job.id, 'outline-check', 'outline'),
+    new AbortController().signal,
+  );
+  expect(
+    result.children?.find((task) => task.item?.id === 'locked'),
+  ).toMatchObject({
+    state: 'skipped',
+    item: { title: 'Bonus questions', locked: true, type: 'staffGraded' },
+  });
+  expect(result.children?.find((task) => task.kind === 'video')).toMatchObject({
+    state: 'pending',
+    item: { id: 'v1' },
+  });
+  expect(result.children?.find((task) => task.item?.id === 'r1')).toMatchObject(
+    { state: 'pending', kind: 'reading' },
+  );
+});
 it('matches ZIP subtitle paths to the same lecture stem as the native video', async () => {
   const database = await db();
   await database.put('artifacts', {

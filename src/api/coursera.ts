@@ -8,9 +8,10 @@ export function materials(slug: string, signal: AbortSignal) {
   const query = new URLSearchParams({
     q: 'slug',
     slug,
+    showLockedItems: 'true',
     includes: 'modules,lessons,items',
     fields:
-      'moduleIds,onDemandCourseMaterialModules.v1(name,slug,lessonIds),onDemandCourseMaterialLessons.v1(name,slug,itemIds),onDemandCourseMaterialItems.v2(name,slug,contentSummary)',
+      'moduleIds,onDemandCourseMaterialModules.v1(name,slug,lessonIds),onDemandCourseMaterialLessons.v1(name,slug,itemIds),onDemandCourseMaterialItems.v2(name,slug,contentSummary,isLocked)',
   });
   return getJson(`${base}onDemandCourseMaterials.v2/?${query}`, signal);
 }

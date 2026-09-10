@@ -56,7 +56,7 @@ export function parseCourse(input: unknown, slug: string): Course {
       if (!value)
         throw new AppError(
           'MISSING_REFERENCE',
-          `${label} is missing item reference ${key}. The API may have returned preview content only. Sign in using the same Chrome profile, confirm course access, and retry failed items.`,
+          `${label} is missing item reference ${key}. The API returned an incomplete outline. Check course access and sign in using the same Chrome profile, then retry failed items. If this persists, report the missing reference.`,
         );
       return value;
     });
